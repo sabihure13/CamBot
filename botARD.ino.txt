@@ -1,0 +1,273 @@
+
+#include <Wire.h>
+#include <Arduino.h>
+#include <TM1637Display.h>
+#include <MechaQMC5883.h>
+#include <Servo.h>
+
+Servo myservo;
+
+#define CLK 11
+#define DIO 12
+
+TM1637Display display(CLK, DIO);
+
+#define echoPin 2
+#define trigPin 3
+
+int x = 0;
+int y = 0;
+int z = 0;
+int input = A0;
+int state = 0;
+
+long duration; 
+int distance;
+
+int l, m, n;
+int az;
+
+MechaQMC5883 qmc;
+
+
+void setup() {
+   
+  pinMode(10, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(8, OUTPUT);
+  pinMode(7, OUTPUT); 
+  pinMode(6, OUTPUT);
+  pinMode(5, OUTPUT); 
+  pinMode(4, OUTPUT); 
+  pinMode(A0, INPUT);
+
+  myservo.attach(9);
+
+  pinMode(trigPin, OUTPUT);       // Sets the trigPin as an OUTPUT
+  pinMode(echoPin, INPUT);
+  
+  Wire.begin();
+  Serial.begin(9600);
+  qmc.init();
+  
+
+  display.setBrightness(7, true);
+  
+ 
+  
+}
+
+void loop() {
+
+  count();
+  hmc();
+  dst();
+  
+  if(y==0)
+  {a();}
+  if(y==1)
+  {b();}
+  if(y==2)
+  {c();}
+  if(y==3)
+  {d();}
+  if(z==1)
+  {a1();}
+  if(z==2)
+  {b1();}
+  if(z==3)
+  {c1();}
+  
+  if(distance < 45)
+   {
+    wait();
+    }
+
+  
+}
+void dst()
+{
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  // Sets the trigPin HIGH (ACTIVE) for 10 microseconds
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  // Reads the echoPin, returns the sound wave travel time in microseconds
+  duration = pulseIn(echoPin, HIGH);
+  // Calculating the distance
+  distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 
+  // Displays the distance on the Serial Monitor
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+  delay(10);
+  }
+void count()
+{
+  int counter = digitalRead(A0);
+  if (state == 0)
+  {
+    switch (counter) {
+
+      case 1 : state = 1;  
+      x = x + 1; 
+      Serial.println(x);
+      display.showNumberDec(az); 
+      break;
+      case 0 : state = 0;
+      break;
+
+    }
+  }
+
+  if (counter == LOW) {
+    state = 0;
+  }
+  }
+
+  
+  void hmc()
+  {
+  int l, m, n;
+  //float azimuth; //is supporting float too
+  qmc.read(&l, &m, &n, &az);
+  //azimuth = qmc.azimuth(&y,&x);//you can get custom azimuth
+ 
+  Serial.print(" a: ");
+  Serial.print(az);
+  count();
+  Serial.println();
+  delay(100);
+    }
+
+  void a()
+  {
+   
+     digitalWrite(4, HIGH);
+     digitalWrite(5, HIGH);
+     
+    if(az<205)
+    {
+     digitalWrite(4, LOW);
+     delay(100);
+     digitalWrite(4, HIGH);
+    }
+    if(az>209)
+    {
+     digitalWrite(5, LOW);
+     delay(100);
+     digitalWrite(5, HIGH);
+    }
+  if(x>=7)
+  {
+     digitalWrite(4, LOW);
+     digitalWrite(5, LOW);
+     delay(2000);
+     digitalWrite(5, HIGH);
+     z=1;
+     y=101;
+  
+  }
+  }
+
+    
+  void b()
+  {
+    if(az<294)
+    {
+     digitalWrite(4, LOW);
+     delay(100);
+     digitalWrite(4, HIGH);
+    }
+    if(az>297)
+    {
+     digitalWrite(5, LOW);
+     delay(100);
+     digitalWrite(5, HIGH);
+    }
+    
+    if(x>=4)
+  {
+     digitalWrite(4, LOW);
+     digitalWrite(5, LOW);
+     delay(2000);
+     digitalWrite(5, HIGH);
+     z=2;
+     y=102;
+     
+    }
+  }
+ 
+  void c()
+  {
+     digitalWrite(4, HIGH);
+     digitalWrite(5, HIGH);
+     
+    if(az<16)
+    {
+     digitalWrite(4, LOW);
+     delay(100);
+     digitalWrite(4, HIGH);
+    }
+    if(az>20)
+    {
+     digitalWrite(5, LOW);
+     delay(100);
+     digitalWrite(5, HIGH);
+    }
+  if(x>=7)
+  {
+     digitalWrite(4, LOW);
+     digitalWrite(5, LOW);
+     delay(2000);
+     digitalWrite(5, HIGH);
+     z=3;
+     y=102;
+  
+  }
+    }
+  void d()
+  {}
+   void a1()
+  {
+    digitalWrite(5, HIGH);
+     if(az>=295)
+    { 
+     digitalWrite(4, HIGH);
+     x=0;
+     y=1;
+     z=100;
+     
+    }
+    }
+   void b1()
+  {
+    digitalWrite(5, HIGH);
+     if(az>=18 && az<360)
+    { 
+     digitalWrite(4, HIGH);
+     x=0;
+     y=2;
+      z=101;
+    }
+  }
+  void c1()
+  {
+    digitalWrite(4, LOW);
+    digitalWrite(5, LOW);
+    }
+  void wait()
+  {
+    digitalWrite(4, LOW);
+    digitalWrite(5, LOW);
+    myservo.write(200);
+    digitalWrite(8, HIGH);
+    delay(3500);
+    digitalWrite(8, LOW);
+    delay(500);
+    myservo.write(90); 
+    
+    }
+  
+  
